@@ -11,11 +11,11 @@ class Striker:
         self.screen = screen
         self.screen_height = screen.get_height()
 
-        self.paddle= pygame.Rect(x, y, width, height)
-        self.paddle_rect = pygame.draw.rect(self.screen, self.color, self.paddle)
+        self.striker= pygame.Rect(x, y, width, height)
+        self.striker_rect = pygame.draw.rect(self.screen, self.color, self.striker)
 
     def display(self):
-        self.paddle_rect = pygame.draw.rect(self.screen, self.color, self.paddle)
+        self.striker_rect = pygame.draw.rect(self.screen, self.color, self.striker)
 
     def move(self, direction):
         if direction == 'up':
@@ -29,6 +29,6 @@ class Striker:
         elif self.y + self.height > self.screen_height:
             self.y = self.screen_height - self.height
         # so after moving we have to update original striker's position
-        self.paddle.y = self.y
+        self.striker.y = self.y
 
 
