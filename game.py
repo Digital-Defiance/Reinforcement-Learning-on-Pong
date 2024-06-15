@@ -1,6 +1,6 @@
 import pygame
 from striker import Striker
-
+from ball import Ball
 
 WIDTH = 800
 HEIGHT = 400
@@ -14,7 +14,7 @@ pygame.display.set_caption('Pong')
 # now making strikers
 left_striker = Striker(0, 200, 15, 60, (0, 0, 255), screen)
 right_striker = Striker(785, 200, 15, 60, (255, 0, 0), screen)
-
+ball = Ball(400, 200, 10, 3, 3, (255, 255, 255), screen)
 
 while True:
     screen.fill((0, 0, 0))
@@ -40,6 +40,8 @@ while True:
 
     left_striker.display()
     right_striker.display()
+    ball.display()
     pygame.display.update()
+    pygame.display.flip()
     clock.tick(120)
-
+    
