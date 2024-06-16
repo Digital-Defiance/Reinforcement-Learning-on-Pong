@@ -21,7 +21,7 @@ def runGame():
     right_striker = Striker(785, 200, 15, 60, (255, 0, 0), screen)
     ball = Ball(400, 200, 10, 3, 3, (255, 255, 255), screen)
 
-
+    
     running = True
     winner = ""
     text = pygame.Surface((1, 1))
