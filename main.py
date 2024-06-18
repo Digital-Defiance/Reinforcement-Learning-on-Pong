@@ -17,8 +17,8 @@ game_font = pygame.font.SysFont('Comic Sans MS', 50)
 
 def runGame():
     # now making strikers and ball
-    left_striker = Striker(0, 200, 15, 60, (0, 0, 255), screen)
-    right_striker = Striker(785, 200, 15, 60, (255, 0, 0), screen)
+    left_striker = Striker(10, 200, 15, 60, (0, 0, 255), screen)
+    right_striker = Striker(775, 200, 15, 60, (255, 0, 0), screen)
     ball = Ball(400, 200, 10, 3, 3, (255, 255, 255), screen)
 
     
@@ -55,7 +55,7 @@ def runGame():
             winner = "RED"
             running = False
         elif gameover == 'right':
-            winner = "GREEN"
+            winner = "BLUE"
             running = False
 
         left_striker.display()
@@ -70,8 +70,8 @@ def runGame():
             text = game_font.render("RED WINS!", False, (255, 0, 0))
             screen.blit(text, (290, 180))
 
-        elif winner == "GREEN":
-            text = game_font.render("GREEN WINS!", False, (0, 255, 0))
+        elif winner == "BLUE":
+            text = game_font.render("BLUE WINS!", False, (0, 0, 255))
             screen.blit(text, (280, 180))
 
         pygame.display.update()
