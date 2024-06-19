@@ -1,0 +1,26 @@
+# Ignore Python bytecode files
+__pycache__
+*.py[cod]
+
+# Ignore virtual environments
+venv/
+ENV/
+env/
+.venv/
+.env/
+
+# Ignore version control files and directories
+.git
+.gitignore
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Ignore logs, temp files, and pid files
+*.log
+*.tmp
+*.pid
+*.bak
+
+# Ignore any other files that you do not want to include in the image
+.DS_Store
