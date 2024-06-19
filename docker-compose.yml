@@ -1,0 +1,7 @@
+services:
+  pytorch:
+    image: pytorch/pytorch
+    command: sleep infinity
+    working_dir: /app
+    volumes:
+      - ./:/app

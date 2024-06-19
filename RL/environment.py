@@ -15,10 +15,9 @@ warnings.filterwarnings('ignore')
 font = cv2.FONT_HERSHEY_COMPLEX_SMALL
 
 
-
 class Striker:
     def __init__(self):
-        self.x = 0
+        self.x = 10
         self.y = 200
         self.width = 15
         self.height = 60
@@ -28,14 +27,11 @@ class Striker:
         self.screen_height = 400
 
         # now creating icon for it
-        self.icon = cv2.imread("paddle.png") / 255.0
+        # self.icon = cv2.imread("paddle.png") / 255.0
+        self.icon = cv2.imread("paddle.png") / 255
         self.icon = cv2.resize(self.icon, (self.width, self.height))
         
-        
 
-    # def set_position(self, x, y):
-    #     self.x = x
-    #     self.y = y
 
     def get_position(self):
         return (self.x, self.y)
@@ -59,7 +55,8 @@ class Ball:
     def __init__(self):
         self.x = 400
         self.y = 200
-        self.radius = 10
+        self.width = 10
+        self.height = 10
         self.velocity_x = 3
         self.velocity_y = 3
         self.color = (255, 255, 255)
@@ -67,12 +64,10 @@ class Ball:
         self.screen_height = 400
 
         self.icon = cv2.imread("ball.png") / 255.0
-        self.icon = cv2.resize(self.icon, (self.radius, self.radius))
+        self.icon = cv2.resize(self.icon, (self.width, self.height))
 
 
-    # def set_position(self, x, y):
-    #     self.x = x
-    #     self.y = y
+
 
     def get_position(self):
         return (self.x, self.y)
@@ -82,19 +77,14 @@ class Ball:
         self.x -= self.velocity_x
         self.y -= self.velocity_y
 
-        # if self.y - self.radius <= 0 or self.y + self.radius >= self.screen_height:
-        #     self.velocity_y = -self.velocity_y
-        # if self.x - self.radius <= 0 or self.x + self.radius >= self.screen_width:
-        #     self.velocity_x =  -self.velocity_x
-
-        if self.y + self.radius >= self.screen_height:
+        # reflect from TOP and BOTTOM 
+        if self.y < 3 or self.y + self.height > self.screen_height - 3:
             self.velocity_y = -self.velocity_y
-        if self.x + self.radius >= self.screen_width:
-            self.velocity_x =  -self.velocity_x
-
+        # reflect from right wall
+        if self.x + self.width > self.screen_width - 3:
+            self.velocity_x = -self.velocity_x
 
         # self.set_position(self.x, self.y)
-
 
 
 class PongEnvironment(Env):
@@ -126,7 +116,11 @@ class PongEnvironment(Env):
         for elem in self.elements:
             elem_shape = elem.icon.shape
             x, y = elem.x, elem.y
+
             self.canvas[y : y + elem_shape[0], x : x + elem_shape[1]] = elem.icon
+
+        text = 'Rewards : {}'.format(self.ep_return)
+        self.canvas = cv2.putText(self.canvas, text, (10, 20), font, 0.8, (0, 0, 0), 1, cv2.LINE_AA)    
 
     def reset(self):
         # episodic return
@@ -154,12 +148,33 @@ class PongEnvironment(Env):
 
         # so the window size is height = 400 and width = 800
         # and we only care about y position of ball
-        if y <= 0:
+        if x <= 3:
             collision = True
         
         if collision == True:
             return True
         return False
+    
+    def striker_collision(self, striker, ball):
+        x_collision = False
+        y_collision = False
+
+        ball_x, ball_y = ball.get_position()
+        striker_x, striker_y = striker.get_position()
+
+
+        if ball_x < striker_x + striker.width and ball_x + ball.width > striker_x:
+            x_collision = True
+        if ball_y < striker_y + striker.height and ball_y + ball.height > striker_y:
+            y_collision = True
+        
+        if x_collision and y_collision:
+            print("ball and striker collided!")
+            return True
+
+        return False
+
+
 
     def get_action_meanings(self):
         return {
@@ -184,10 +199,18 @@ class PongEnvironment(Env):
             self.striker.move("Down")
 
         
-        # now out Ball will spawn
-        
         self.ball.move()
+
+        # checking if ball is collided with striker
+        if self.striker_collision(self.striker, self.ball) == True:
+            self.ball.velocity_x = -self.ball.velocity_x
+            reward += 10
+            print("Striker catches the ball -> reward + 10")
+            
+
+        # checking if ball is collided with left wall
         if self.has_collided(self.ball):
+            print("collison with left wall! -> reward - 10")
             done = True
             reward = -10
 
@@ -212,14 +235,8 @@ class PongEnvironment(Env):
             return self.canvas
             
 
-
-
-# env = PongEnvironment()
-# obs = env.reset()
-# screen = env.render(mode = "rgb_array")
-# plt.imshow(screen)
-
 from IPython import display
+display.clear_output(wait=True)
 
 env = PongEnvironment()
 obs = env.reset()
@@ -232,7 +249,7 @@ while True:
     env.render()
 
     if done == True:
-        break
-
+        # break
+        obs = env.reset()
 env.close()
         

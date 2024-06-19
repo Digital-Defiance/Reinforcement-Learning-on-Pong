@@ -13,7 +13,7 @@ clock = pygame.time.Clock()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('Pong')
 
-game_font = pygame.font.SysFont('Comic Sans MS', 50)
+game_font = pygame.font.Font(None, 50)
 
 def runGame():
     # now making strikers and ball
