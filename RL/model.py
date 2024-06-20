@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 
 
-class DQN(nn.Module):
+class DQN(torch.nn.Module):
 
     def __init__(self, in_features):
         super(DQN, self).__init__()

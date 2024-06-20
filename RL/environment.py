@@ -27,8 +27,9 @@ class Striker:
         self.screen_height = 400
 
         # now creating icon for it
-        # self.icon = cv2.imread("paddle.png") / 255.0
-        self.icon = cv2.imread("paddle.png") / 255
+        # print(cv2.imread("paddle.png"))
+        self.icon = cv2.imread("paddle.png") / 255.0
+        # self.icon = cv2.imread("paddle.png") / 255
         self.icon = cv2.resize(self.icon, (self.width, self.height))
         
 
