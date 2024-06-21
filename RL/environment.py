@@ -161,7 +161,7 @@ class PongEnvironment(Env):
 
         ball_x, ball_y = ball.get_position()
         striker_x, striker_y = striker.get_position()
-        print(ball_x, ball_y)
+        # print(ball_x, ball_y)
 
 
         if ball_x < striker_x + striker.width and ball_x + ball.width > striker_x:
@@ -231,21 +231,21 @@ class PongEnvironment(Env):
             return self.canvas
             
 
-from IPython import display
-display.clear_output(wait=True)
+# from IPython import display
+# display.clear_output(wait=True)
 
-env = PongEnvironment()
-obs = env.reset()
+# env = PongEnvironment()
+# obs = env.reset()  
 
 
-while True:
-    action = env.action_space.sample()
-    obs, reward, done, info = env.step(action)
+# while True:
+#     action = env.action_space.sample()
+#     obs, reward, done, info = env.step(action)
 
-    env.render()
+#     env.render()
 
-    if done == True: 
-        # break
-        obs = env.reset()
-# env.close()
+#     if done == True: 
+#         # break
+#         obs = env.reset()
+# # env.close()
         

@@ -7,6 +7,7 @@ from collections import deque
 from model import DQN
 from environment import PongEnvironment
 import random
+from IPython import display
 
 # defining hyperparameters
 gamma = 0.99 # Discount factor
@@ -16,7 +17,7 @@ target_update_freq = 1000
 learning_rate = 0.001
 batch_size = 64
 replay_buffer_size = 10000
-num_episodes = 2
+num_episodes = 10
 
 
 # Initializing environments now!
@@ -46,14 +47,23 @@ replay_buffer = deque(maxlen = replay_buffer_size)
 def update_dqn(model, target_model, optimizer, batch, gamma):
     # aip just unpacks the batch into separate tuple
     states, actions, rewards, next_states, done = zip(*batch)
-
     # now creating pytorch tensors
+    
+    states = np.array(states, dtype=np.float32)
+    actions = np.array(actions, dtype=np.int64)
+    rewards = np.array(rewards, dtype=np.float32)
+    next_states = np.array(next_states, dtype=np.float32)
+    dones = np.array(done, dtype=np.float32)
+
     states = torch.tensor(states, dtype=torch.float32)
     actions = torch.tensor(actions, dtype=torch.int64)
     rewards = torch.tensor(rewards, dtype=torch.float32)
     next_states = torch.tensor(next_states, dtype=torch.float32)
     dones = torch.tensor(done, dtype=torch.float32)
 
+    states = states.view(states.size(0), -1)
+    next_states = next_states.view(next_states.size(0), -1)
+    
     q_values = model(states)
     next_q_values = target_model(next_states).max(dim = 1)[0].detach()
 
@@ -63,6 +73,7 @@ def update_dqn(model, target_model, optimizer, batch, gamma):
     # calculate loss -> smooth l1 loss is advance of l1_loss ( MAE )
     # the loss of smooth_l1_loss approaches to 0
     loss = F.smooth_l1_loss(q_values.gather(dim = 1, index = actions.unsqueeze(-1)), target_q_values.unsqueeze(-1))
+    print("current loss -> ", loss)
     # what is unsqueeze = -1, it adds new dimension at last
 
     optimizer.zero_grad()
@@ -75,16 +86,18 @@ def epsilon_greedy_policy(state, epsilon, model, action_size):
 
     else:
         with torch.no_grad():
-            q_values = model(torch.tensor(state, dtype=torch.float32))
+            state = torch.tensor(state, dtype=torch.float32).view(1, -1)
+            q_values = model(state)
             return q_values.argmax().item()
-        
 
 
 # Training Loop
 
 epsilon = epsilon_start
 for episode in range(num_episodes):
+    batch = None
     state = env.reset()
+    episode_experiences = []
     total_reward = 0
     done = False
     render_interval = 10
@@ -93,23 +106,32 @@ for episode in range(num_episodes):
         action = epsilon_greedy_policy(state, epsilon, model, action_size)
         next_state, reward, done, _ = env.step(action)
 
-        replay_buffer.append((state, action, reward, next_state, done))
+        # replay_buffer.append((state, action, reward, next_state, done))
+        episode_experiences.append((state, action, reward, next_state, done))
         total_reward += reward
         state = next_state
 
-        if len(replay_buffer) > batch_size:
-            batch = random.sample(replay_buffer, batch_size)
-            update_dqn(model, target_model, optimizer, batch, gamma)
+        if reward == 10 or reward == -10:
+            done = True
 
         if episode % target_update_freq == 0:
             target_model.load_state_dict(model.state_dict())
 
         if episode % render_interval == 0:
             env.render()
+        
+        display.clear_output(wait = True)
+        env.render()
+        # print(f"Episode: {episode}, Action: {action}, Reward: {reward}, Done: {done}")
+    
+    print("Updating DQN")
+    # batch = random.sample(replay_buffer, batch_size)
+    update_dqn(model, target_model, optimizer, episode_experiences, gamma)
 
+    # Update the target model
 
     epsilon = max(epsilon_end, epsilon * 0.995)
-    print(f"Epsilon {episode + 1} : Total Reward = {total_reward}")
+    print(f"Episode {episode + 1} : Total Reward = {total_reward}")
 
 
 torch.save(model.state_dict(), "trained_model.pth")
