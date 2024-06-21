@@ -27,8 +27,7 @@ class Striker:
         self.screen_height = 400
 
         # now creating icon for it
-        # print(cv2.imread("paddle.png"))
-        self.icon = cv2.imread("paddle.png") / 255.0
+        self.icon = cv2.imread("/home/abhay/Projects/Pong/RL/paddle.png") / 255.0
         # self.icon = cv2.imread("paddle.png") / 255
         self.icon = cv2.resize(self.icon, (self.width, self.height))
         
@@ -58,13 +57,13 @@ class Ball:
         self.y = 200
         self.width = 10
         self.height = 10
-        self.velocity_x = 3
-        self.velocity_y = 3
+        self.velocity_x = 4
+        self.velocity_y = 4
         self.color = (255, 255, 255)
         self.screen_width = 800
         self.screen_height = 400
 
-        self.icon = cv2.imread("ball.png") / 255.0
+        self.icon = cv2.imread("/home/abhay/Projects/Pong/RL/ball.png") / 255.0
         self.icon = cv2.resize(self.icon, (self.width, self.height))
 
 
@@ -79,10 +78,10 @@ class Ball:
         self.y -= self.velocity_y
 
         # reflect from TOP and BOTTOM 
-        if self.y < 3 or self.y + self.height > self.screen_height - 3:
+        if self.y <= 3 or self.y + self.height >= self.screen_height - 3:
             self.velocity_y = -self.velocity_y
         # reflect from right wall
-        if self.x + self.width > self.screen_width - 3:
+        if self.x + self.width >= self.screen_width - 3:
             self.velocity_x = -self.velocity_x
 
         # self.set_position(self.x, self.y)
@@ -109,6 +108,7 @@ class PongEnvironment(Env):
         # Defining elements present inside the environment
         self.elements = []
         # e.g -> striker, ball ( distinct elements )
+        self.reward = 0
 
     def draw_elements_on_canvas(self):
         
@@ -120,12 +120,13 @@ class PongEnvironment(Env):
 
             self.canvas[y : y + elem_shape[0], x : x + elem_shape[1]] = elem.icon
 
-        text = 'Rewards : {}'.format(self.ep_return)
+        text = 'state : {}, Rewards : {}'.format(self.ep_return, self.reward)
         self.canvas = cv2.putText(self.canvas, text, (10, 20), font, 0.8, (0, 0, 0), 1, cv2.LINE_AA)    
 
     def reset(self):
         # episodic return
         self.ep_return = 0
+        self.reward = 0
 
         # Initialize striker, ball object
         self.striker = Striker()
@@ -151,8 +152,6 @@ class PongEnvironment(Env):
         # and we only care about y position of ball
         if x <= 3:
             collision = True
-        
-        if collision == True:
             return True
         return False
     
@@ -162,6 +161,7 @@ class PongEnvironment(Env):
 
         ball_x, ball_y = ball.get_position()
         striker_x, striker_y = striker.get_position()
+        print(ball_x, ball_y)
 
 
         if ball_x < striker_x + striker.width and ball_x + ball.width > striker_x:
@@ -169,11 +169,7 @@ class PongEnvironment(Env):
         if ball_y < striker_y + striker.height and ball_y + ball.height > striker_y:
             y_collision = True
         
-        if x_collision and y_collision:
-            print("ball and striker collided!")
-            return True
-
-        return False
+        return x_collision and y_collision
 
 
 
@@ -191,7 +187,8 @@ class PongEnvironment(Env):
         assert self.action_space.contains(action), "Invalid Action!"
 
         # Reward for executing a step
-        reward = 1
+        # reward = 1
+        # nah, we will not reward for executing step, bcs it's state transition
 
         # applying action for striker
         if action == 0:
@@ -203,23 +200,21 @@ class PongEnvironment(Env):
         self.ball.move()
 
         # checking if ball is collided with striker
-        if self.striker_collision(self.striker, self.ball) == True:
+        if self.striker_collision(self.striker, self.ball):
             self.ball.velocity_x = -self.ball.velocity_x
-            reward += 10
-            print("Striker catches the ball -> reward + 10")
+            self.reward += 10
             
 
         # checking if ball is collided with left wall
         if self.has_collided(self.ball):
-            print("collison with left wall! -> reward - 10")
             done = True
-            reward = -10
+            self.reward = -10
 
         
         self.ep_return += 1
         self.draw_elements_on_canvas()
 
-        return self.canvas, reward, done, []
+        return self.canvas, self.reward, done, []
 
 
 
@@ -249,8 +244,8 @@ while True:
 
     env.render()
 
-    if done == True:
+    if done == True: 
         # break
         obs = env.reset()
-env.close()
+# env.close()
         
