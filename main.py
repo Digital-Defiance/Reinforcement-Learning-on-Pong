@@ -1,6 +1,8 @@
 import pygame
 from striker import Striker
 from ball import Ball
+import torch
+from RL.model import DQN
 
 WIDTH = 800
 HEIGHT = 400
@@ -15,12 +17,23 @@ pygame.display.set_caption('Pong')
 
 game_font = pygame.font.Font(None, 50)
 
+
+
+
+def get_state(left_striker, ball):
+    state = [left_striker.x, left_striker.y, ball.x, ball.y]
+    return torch.tensor(state, dtype=torch.float32).flatten().view(1, -1)
+
 def runGame():
     # now making strikers and ball
     left_striker = Striker(10, 200, 15, 60, (0, 0, 255), screen)
     right_striker = Striker(775, 200, 15, 60, (255, 0, 0), screen)
     ball = Ball(400, 200, 10, 3, 3, (255, 255, 255), screen)
 
+    state_size = 4
+    model = DQN(in_features=state_size)
+    model.load_state_dict(torch.load("RL/trained_model.pth"))
+    model.eval()
     
     running = True
     winner = ""
@@ -36,10 +49,10 @@ def runGame():
         
         # handling user input for keys on both the players!
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_a]:
-            left_striker.move('up')
-        if keys[pygame.K_d]:
-            left_striker.move('down')
+        # if keys[pygame.K_a]:
+        #     left_striker.move('up')
+        # if keys[pygame.K_d]:
+        #     left_striker.move('down')
         if keys[pygame.K_LEFT]:
             right_striker.move('down')
         if keys[pygame.K_RIGHT]:
@@ -57,6 +70,16 @@ def runGame():
         elif gameover == 'right':
             winner = "BLUE"
             running = False
+        
+        state = get_state(left_striker, ball)
+        with torch.no_grad():
+            q_values = model(state)
+            action = q_values.argmax().item()
+        
+        if action == 0:
+            left_striker.move('up')
+        elif action == 1:
+            left_striker.move('down')
 
         left_striker.display()
         right_striker.display()
