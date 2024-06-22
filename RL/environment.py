@@ -140,8 +140,7 @@ class PongEnvironment(Env):
         # drawing elements on canvas
         self.draw_elements_on_canvas()
 
-        # returning observation
-        return self.canvas    
+          
 
     def has_collided(self, ball):
         # Logic is quite simple, we only care about left-side wall and ball position
@@ -214,9 +213,12 @@ class PongEnvironment(Env):
         self.ep_return += 1
         self.draw_elements_on_canvas()
 
-        return self.canvas, self.reward, done, []
+        # state = [self.striker.x, self.striker.y, self.ball.x, self.ball.y]
+        return [], self.reward, done, []
+    
 
-
+    def get_striker_and_ball_coordinates(self):
+        return self.striker.x, self.striker.y, self.ball.x, self.ball.y
 
 
 

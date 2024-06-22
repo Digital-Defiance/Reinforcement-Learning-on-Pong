@@ -8,6 +8,7 @@ from model import DQN
 from environment import PongEnvironment
 import random
 from IPython import display
+import matplotlib.pyplot as plt
 
 # defining hyperparameters
 gamma = 0.99 # Discount factor
@@ -17,12 +18,12 @@ target_update_freq = 1000
 learning_rate = 0.001
 batch_size = 64
 replay_buffer_size = 10000
-num_episodes = 10
+num_episodes = 500
 
 
 # Initializing environments now!
 env = PongEnvironment()
-state_size = env.observation_space.shape[0] * env.observation_space.shape[1] * env.observation_space.shape[2]
+state_size = 4 # striker_y, striker_x, ball_y, ball_X
 action_size = 2 # left and right
 
 
@@ -44,7 +45,7 @@ replay_buffer = deque(maxlen = replay_buffer_size)
 
 # why this function -> for training DQN model using mini-batch of experince tuple from replay buffer
 
-def update_dqn(model, target_model, optimizer, batch, gamma):
+def update_dqn(model, target_model, optimizer, batch, gamma, losses):
     # aip just unpacks the batch into separate tuple
     states, actions, rewards, next_states, done = zip(*batch)
     # now creating pytorch tensors
@@ -63,9 +64,10 @@ def update_dqn(model, target_model, optimizer, batch, gamma):
 
     states = states.view(states.size(0), -1)
     next_states = next_states.view(next_states.size(0), -1)
-    
-    q_values = model(states)
+
+    q_values = model(next_states)
     next_q_values = target_model(next_states).max(dim = 1)[0].detach()
+
 
     # now here is the formula
     target_q_values = rewards + gamma * next_q_values * (1 - dones)
@@ -79,6 +81,8 @@ def update_dqn(model, target_model, optimizer, batch, gamma):
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+    
+    return loss
 
 def epsilon_greedy_policy(state, epsilon, model, action_size):
     if np.random.rand() < epsilon:
@@ -91,21 +95,26 @@ def epsilon_greedy_policy(state, epsilon, model, action_size):
             return q_values.argmax().item()
 
 
+def extract_features(env):
+    striker_x, striker_y, ball_x, ball_y = env.get_striker_and_ball_coordinates()
+    return np.array([striker_x, striker_y, ball_x, ball_y], dtype=np.float32)
+
 # Training Loop
 
 epsilon = epsilon_start
+losses = []
 for episode in range(num_episodes):
-    batch = None
-    state = env.reset()
+    env.reset()
     episode_experiences = []
     total_reward = 0
     done = False
     render_interval = 10
+    state = extract_features(env)
 
     while not done:
         action = epsilon_greedy_policy(state, epsilon, model, action_size)
-        next_state, reward, done, _ = env.step(action)
-
+        _, reward, done, _ = env.step(action)
+        next_state = extract_features(env)
         # replay_buffer.append((state, action, reward, next_state, done))
         episode_experiences.append((state, action, reward, next_state, done))
         total_reward += reward
@@ -122,12 +131,11 @@ for episode in range(num_episodes):
         
         display.clear_output(wait = True)
         env.render()
-        # print(f"Episode: {episode}, Action: {action}, Reward: {reward}, Done: {done}")
     
     print("Updating DQN")
     # batch = random.sample(replay_buffer, batch_size)
-    update_dqn(model, target_model, optimizer, episode_experiences, gamma)
-
+    loss = update_dqn(model, target_model, optimizer, episode_experiences, gamma, losses)
+    losses.append(loss.item())
     # Update the target model
 
     epsilon = max(epsilon_end, epsilon * 0.995)
@@ -135,3 +143,8 @@ for episode in range(num_episodes):
 
 
 torch.save(model.state_dict(), "trained_model.pth")
+
+
+
+plt.plot(losses)
+plt.show()
