@@ -27,12 +27,10 @@ class Striker:
         self.screen_height = 400
 
         # now creating icon for it
-        self.icon = cv2.imread("/home/abhay/Projects/Pong/RL/paddle.png") / 255.0
+        self.icon = cv2.imread("paddle.png") / 255.0
         # self.icon = cv2.imread("paddle.png") / 255
         self.icon = cv2.resize(self.icon, (self.width, self.height))
         
-
-
     def get_position(self):
         return (self.x, self.y)
     
@@ -46,11 +44,8 @@ class Striker:
             self.y = 0
         elif self.y + self.height > self.screen_height:
             self.y = self.screen_height - self.height
-
-        # self.set_position(self.x, self.y)
              
-        
-
+    
 class Ball:
     def __init__(self):
         self.x = 400
@@ -63,15 +58,11 @@ class Ball:
         self.screen_width = 800
         self.screen_height = 400
 
-        self.icon = cv2.imread("/home/abhay/Projects/Pong/RL/ball.png") / 255.0
+        self.icon = cv2.imread("ball.png") / 255.0
         self.icon = cv2.resize(self.icon, (self.width, self.height))
-
-
-
 
     def get_position(self):
         return (self.x, self.y)
-
 
     def move(self):
         self.x -= self.velocity_x
@@ -140,8 +131,6 @@ class PongEnvironment(Env):
         # drawing elements on canvas
         self.draw_elements_on_canvas()
 
-          
-
     def has_collided(self, ball):
         # Logic is quite simple, we only care about left-side wall and ball position
         collision = False       
@@ -169,8 +158,6 @@ class PongEnvironment(Env):
             y_collision = True
         
         return x_collision and y_collision
-
-
 
     def get_action_meanings(self):
         return {
@@ -219,8 +206,6 @@ class PongEnvironment(Env):
 
     def get_striker_and_ball_coordinates(self):
         return [self.striker.x, self.striker.y, self.ball.x, self.ball.y, self.ball.velocity_x, self.ball.velocity_y]
-
-
 
     def render(self, mode = "human"):
         

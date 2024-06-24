@@ -9,41 +9,9 @@ from environment import PongEnvironment
 import random
 from IPython import display
 import matplotlib.pyplot as plt
-
-# defining hyperparameters
-gamma = 0.99 # Discount factor
-epsilon_start = 1.0 # this value will get reduce 
-epsilon_end = 0.01 # till this our model will know path
-target_update_freq = 1000
-learning_rate = 0.001
-batch_size = 64
-replay_buffer_size = int(1e6) # 1e6 for Atari and 1e5 for classic games
-num_episodes = 10
-
-
-# Initializing environments now!
-env = PongEnvironment()
-state_size = 6 # striker_y, striker_x, ball_y, ball_X, velocity of ball (x and y) 
-action_size = 2 # left and right
-
-
-model = DQN(state_size)
-target_model = DQN(state_size)
-
-
-target_model.load_state_dict(model.state_dict())
-target_model.eval()
-# why eval -> to stop dropout layers, batch normalization
-
-optimizer = optim.Adam(model.parameters(), lr = learning_rate)
-
-# deque for storing tupele of (state, action, reward, next_state, done) during training
-replay_buffer = deque(maxlen = replay_buffer_size)
-
-
+import os
 
 # Helper functions
-
 # why this function -> for training DQN model using mini-batch of experince tuple from replay buffer
 
 def update_dqn(model, target_model, optimizer, batch, gamma, losses):
@@ -96,11 +64,47 @@ def epsilon_greedy_policy(state, epsilon, model, action_size):
             q_values = model(state)
             return q_values.argmax().item()
 
+# defining hyperparameters
+gamma = 0.99 # Discount factor
+epsilon_start = 1.0 # this value will get reduce 
+epsilon_end = 0.01 # till this our model will know path
+target_update_freq = 1000
+learning_rate = 0.001
+batch_size = 64
+replay_buffer_size = int(1e6) # 1e6 for Atari and 1e5 for classic games
+num_episodes = 2
+losses = []
+
+# Initializing environments now!
+env = PongEnvironment()
+state_size = 6 # striker_y, striker_x, ball_y, ball_X, velocity of ball (x and y) 
+action_size = 2 # left and right
+
+model = DQN(state_size)
+target_model = DQN(state_size)
+optimizer = optim.Adam(model.parameters(), lr = learning_rate)
+
+if os.path.isfile("trained_model.pth"):
+    checkpoint = torch.load("trained_model.pth")
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    losses.extend(checkpoint['losses'])
+    total_num_episodes = checkpoint['total_num_episodes']
+    model.train()
+
+else:
+    print("TRAINING FOR FIRST TIME!")  
+    total_num_episodes = 0
+    model.train()
+
+target_model.load_state_dict(model.state_dict())
+target_model.eval()
+# why eval -> to stop dropout layers, batch normalization
+
 
 # Training Loop
 
 epsilon = epsilon_start
-losses = []
 total_reward = 0
 for episode in range(num_episodes):
     env.reset()
@@ -122,12 +126,12 @@ for episode in range(num_episodes):
         if episode % target_update_freq == 0:
             target_model.load_state_dict(model.state_dict())
 
-        
+
         display.clear_output(wait = True)
         # env.render()
     
 
-    # batch = random.sample(replay_buffer, batch_size)
+    # batch = random.sample(replay_buffer, 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batch_size)
     loss = update_dqn(model, target_model, optimizer, episode_experiences, gamma, losses)
     losses.append(loss.item())
     # Update the target model
@@ -137,9 +141,21 @@ for episode in range(num_episodes):
 
 print("---------------")
 print("Total reward -> ", total_reward)
-torch.save(model.state_dict(), "trained_model.pth")
 
 
 
-plt.plot(losses)
+# now saving model using checkpoints
+PATH = "trained_model.pth"
+LOSSES = []
+LOSSES.extend(losses)
+TOTAL_NUM_EPISODES = num_episodes + total_num_episodes
+
+torch.save({
+    'model_state_dict' : model.state_dict(),
+    'optimizer_state_dict' : optimizer.state_dict(),
+    'losses' : LOSSES,   
+    'total_num_episodes' : TOTAL_NUM_EPISODES
+}, PATH)
+
+plt.plot(LOSSES)
 plt.show()
