@@ -18,17 +18,18 @@ target_update_freq = 1000
 learning_rate = 0.001
 batch_size = 64
 replay_buffer_size = 10000
-num_episodes = 500
+num_episodes = 2000
 
 
 # Initializing environments now!
 env = PongEnvironment()
-state_size = 4 # striker_y, striker_x, ball_y, ball_X
+state_size = 6 # striker_y, striker_x, ball_y, ball_X, velocity of ball (x and y) 
 action_size = 2 # left and right
 
 
 model = DQN(state_size)
 target_model = DQN(state_size)
+
 
 target_model.load_state_dict(model.state_dict())
 target_model.eval()
@@ -62,10 +63,11 @@ def update_dqn(model, target_model, optimizer, batch, gamma, losses):
     next_states = torch.tensor(next_states, dtype=torch.float32)
     dones = torch.tensor(done, dtype=torch.float32)
 
+
     states = states.view(states.size(0), -1)
     next_states = next_states.view(next_states.size(0), -1)
 
-    q_values = model(next_states)
+    q_values = model(states)
     next_q_values = target_model(next_states).max(dim = 1)[0].detach()
 
 
@@ -95,30 +97,26 @@ def epsilon_greedy_policy(state, epsilon, model, action_size):
             return q_values.argmax().item()
 
 
-def extract_features(env):
-    striker_x, striker_y, ball_x, ball_y = env.get_striker_and_ball_coordinates()
-    return np.array([striker_x, striker_y, ball_x, ball_y], dtype=np.float32)
-
 # Training Loop
 
 epsilon = epsilon_start
 losses = []
+total_reward = 0
 for episode in range(num_episodes):
     env.reset()
     episode_experiences = []
-    total_reward = 0
     done = False
     render_interval = 10
-    state = extract_features(env)
+    state = env.get_striker_and_ball_coordinates()
 
     while not done:
         action = epsilon_greedy_policy(state, epsilon, model, action_size)
         _, reward, done, _ = env.step(action)
-        next_state = extract_features(env)
+        next_state = env.get_striker_and_ball_coordinates()
         # replay_buffer.append((state, action, reward, next_state, done))
         episode_experiences.append((state, action, reward, next_state, done))
-        total_reward += reward
         state = next_state
+        total_reward += reward
 
         if reward == 10 or reward == -10:
             done = True
@@ -132,16 +130,17 @@ for episode in range(num_episodes):
         display.clear_output(wait = True)
         env.render()
     
-    print("Updating DQN")
+
     # batch = random.sample(replay_buffer, batch_size)
     loss = update_dqn(model, target_model, optimizer, episode_experiences, gamma, losses)
     losses.append(loss.item())
     # Update the target model
 
     epsilon = max(epsilon_end, epsilon * 0.995)
-    print(f"Episode {episode + 1} : Total Reward = {total_reward}")
+    print(f"Episode {episode + 1} : Total Reward = {reward}")
 
-
+print("---------------")
+print("Total reward -> ", total_reward)
 torch.save(model.state_dict(), "trained_model.pth")
 
 

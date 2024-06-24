@@ -218,7 +218,7 @@ class PongEnvironment(Env):
     
 
     def get_striker_and_ball_coordinates(self):
-        return self.striker.x, self.striker.y, self.ball.x, self.ball.y
+        return [self.striker.x, self.striker.y, self.ball.x, self.ball.y, self.ball.velocity_x, self.ball.velocity_y]
 
 
 
