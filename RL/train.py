@@ -10,27 +10,14 @@ import random
 from IPython import display
 import matplotlib.pyplot as plt
 import os
+from replayBuffer import ReplayBuffer
 
 # Helper functions
 # why this function -> for training DQN model using mini-batch of experince tuple from replay buffer
 
-def update_dqn(model, target_model, optimizer, batch, gamma, losses):
-    # aip just unpacks the batch into separate tuple
-    states, actions, rewards, next_states, done = zip(*batch)
-    # now creating pytorch tensors
+def update_dqn(model, target_model, optimizer, episode_experiences, replay_buffer, gamma, losses):
     
-    states = np.array(states, dtype=np.float32)
-    actions = np.array(actions, dtype=np.int64)
-    rewards = np.array(rewards, dtype=np.float32)
-    next_states = np.array(next_states, dtype=np.float32)
-    dones = np.array(done, dtype=np.float32)
-
-    states = torch.tensor(states, dtype=torch.float32)
-    actions = torch.tensor(actions, dtype=torch.int64)
-    rewards = torch.tensor(rewards, dtype=torch.float32)
-    next_states = torch.tensor(next_states, dtype=torch.float32)
-    dones = torch.tensor(done, dtype=torch.float32)
-
+    states, actions, rewards, next_states, dones = replay_buffer.return_tensor(episode_experiences)
 
     states = states.view(states.size(0), -1)
     next_states = next_states.view(next_states.size(0), -1)
@@ -52,7 +39,7 @@ def update_dqn(model, target_model, optimizer, batch, gamma, losses):
     loss.backward()
     optimizer.step()
     
-    return loss
+    return loss, replay_buffer
 
 def epsilon_greedy_policy(state, epsilon, model, action_size):
     if np.random.rand() < epsilon:
@@ -72,11 +59,13 @@ target_update_freq = 1000
 learning_rate = 0.001
 batch_size = 64
 replay_buffer_size = int(1e6) # 1e6 for Atari and 1e5 for classic games
-num_episodes = 2
+num_episodes = 10
 losses = []
 
 # Initializing environments now!
 env = PongEnvironment()
+replay_buffer = ReplayBuffer()
+replay_buffer.create_buffer(replay_buffer_size)
 state_size = 6 # striker_y, striker_x, ball_y, ball_X, velocity of ball (x and y) 
 action_size = 2 # left and right
 
@@ -90,6 +79,7 @@ if os.path.isfile("trained_model.pth"):
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     losses.extend(checkpoint['losses'])
     total_num_episodes = checkpoint['total_num_episodes']
+    replay_buffer.load_buffer()
     model.train()
 
 else:
@@ -132,7 +122,7 @@ for episode in range(num_episodes):
     
 
     # batch = random.sample(replay_buffer, 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batch_size)
-    loss = update_dqn(model, target_model, optimizer, episode_experiences, gamma, losses)
+    loss, replay_buffer = update_dqn(model, target_model, optimizer, episode_experiences, replay_buffer, gamma, losses)
     losses.append(loss.item())
     # Update the target model
 
@@ -150,6 +140,7 @@ LOSSES = []
 LOSSES.extend(losses)
 TOTAL_NUM_EPISODES = num_episodes + total_num_episodes
 
+replay_buffer.save_buffer()
 torch.save({
     'model_state_dict' : model.state_dict(),
     'optimizer_state_dict' : optimizer.state_dict(),
@@ -157,5 +148,6 @@ torch.save({
     'total_num_episodes' : TOTAL_NUM_EPISODES
 }, PATH)
 
+print("Total number of episode on which model is trained on -> ", TOTAL_NUM_EPISODES)
 plt.plot(LOSSES)
 plt.show()

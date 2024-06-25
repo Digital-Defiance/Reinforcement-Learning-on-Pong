@@ -2,19 +2,25 @@ import torch
 import random
 from collections import deque
 import numpy as np
+import pickle
 
 
 class ReplayBuffer():
-    def __init__(self, buffer_size):
-        self.buffer = deque(maxlen=buffer_size)
+    def __init__(self):
+        pass        
 
     def __len__(self):
         return len(self.buffer)
     
+    def create_buffer(self, buffer_size):
+        self.buffer_size = buffer_size
+        self.buffer = deque(maxlen=self.buffer_size)
+    
     def append(self, experience):
         self.buffer.append(experience)
 
-    def sample_batch(self, episode_experiences):
+    def return_tensor(self, episode_experiences):
+        self.append(episode_experiences)
         states, actions, rewards, next_states, done = zip(*episode_experiences)
 
         states = np.array(states, dtype=np.float32)
@@ -31,5 +37,12 @@ class ReplayBuffer():
 
         return states, actions, rewards, next_states, dones
 
+    def save_buffer(self):
+        with open("buffer.pkl", 'wb') as f:
+            pickle.dump(list(self.buffer), f)
+    
+    def load_buffer(self):
+        with open("buffer.pkl", 'rb') as f:
+            self.buffer = deque(pickle.load(f))
 
 
