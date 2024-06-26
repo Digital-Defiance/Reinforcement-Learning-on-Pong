@@ -21,7 +21,7 @@ game_font = pygame.font.Font(None, 50)
 
 
 def get_state(left_striker, ball):
-    state = [left_striker.x, left_striker.y, ball.x, ball.y]
+    state = [left_striker.x, left_striker.y, ball.x, ball.y, ball.velocity_x, ball.velocity_y]
     return torch.tensor(state, dtype=torch.float32).flatten().view(1, -1)
 
 def runGame():
@@ -30,9 +30,9 @@ def runGame():
     right_striker = Striker(775, 200, 15, 60, (255, 0, 0), screen)
     ball = Ball(400, 200, 10, 3, 3, (255, 255, 255), screen)
 
-    state_size = 4
-    model = DQN(in_features=state_size)
-    model.load_state_dict(torch.load("RL/trained_model.pth"))
+    model = DQN(in_features=6)
+    checkpoint = torch.load("RL/trained_model.pth")
+    model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
     
     running = True
