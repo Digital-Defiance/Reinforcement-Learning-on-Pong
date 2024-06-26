@@ -15,10 +15,26 @@ from replayBuffer import ReplayBuffer
 # Helper functions
 # why this function -> for training DQN model using mini-batch of experince tuple from replay buffer
 
-def update_dqn(model, target_model, optimizer, episode_experiences, replay_buffer, gamma, losses):
+def update_dqn(model, target_model, optimizer, batch, replay_buffer, gamma, losses):
     
-    states, actions, rewards, next_states, dones = replay_buffer.return_tensor(episode_experiences)
 
+    for i in batch:
+        states, actions, rewards, next_states, done = zip(*i)    
+            
+
+    states = np.array(states, dtype=np.float32)
+    actions = np.array(actions, dtype=np.int64)
+    rewards = np.array(rewards, dtype=np.float32)
+    next_states = np.array(next_states, dtype=np.float32)
+    dones = np.array(done, dtype=np.float32)
+
+    states = torch.tensor(states, dtype=torch.float32)
+    actions = torch.tensor(actions, dtype=torch.int64)
+    rewards = torch.tensor(rewards, dtype=torch.float32)
+    next_states = torch.tensor(next_states, dtype=torch.float32)
+    dones = torch.tensor(done, dtype=torch.float32)
+    
+   
     states = states.view(states.size(0), -1)
     next_states = next_states.view(next_states.size(0), -1)
 
@@ -57,18 +73,15 @@ epsilon_start = 1.0 # this value will get reduce
 epsilon_end = 0.01 # till this our model will know path
 target_update_freq = 1000
 learning_rate = 0.001
-batch_size = 64
-replay_buffer_size = int(1e6) # 1e6 for Atari and 1e5 for classic games
-num_episodes = 10
+num_episodes = 100
 losses = []
 
 # Initializing environments now!
 env = PongEnvironment()
 replay_buffer = ReplayBuffer()
-replay_buffer.create_buffer(replay_buffer_size)
 state_size = 6 # striker_y, striker_x, ball_y, ball_X, velocity of ball (x and y) 
 action_size = 2 # left and right
-
+batch_size = 32 # batch size for replay_buffer
 model = DQN(state_size)
 target_model = DQN(state_size)
 optimizer = optim.Adam(model.parameters(), lr = learning_rate)
@@ -79,7 +92,8 @@ if os.path.isfile("trained_model.pth"):
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     losses.extend(checkpoint['losses'])
     total_num_episodes = checkpoint['total_num_episodes']
-    replay_buffer.load_buffer()
+    if os.path.isfile('buffer.pkl'):
+        replay_buffer.load_buffer()
     model.train()
 
 else:
@@ -98,15 +112,14 @@ epsilon = epsilon_start
 total_reward = 0
 for episode in range(num_episodes):
     env.reset()
-    episode_experiences = []
     done = False
     state = env.get_striker_and_ball_coordinates()
+    episode_experiences = []
 
     while not done:
         action = epsilon_greedy_policy(state, epsilon, model, action_size)
         _, reward, done, _ = env.step(action)
         next_state = env.get_striker_and_ball_coordinates()
-        # replay_buffer.append((state, action, reward, next_state, done))
         episode_experiences.append((state, action, reward, next_state, done))
         state = next_state
         
@@ -119,15 +132,18 @@ for episode in range(num_episodes):
 
         display.clear_output(wait = True)
         # env.render()
-    
 
-    # batch = random.sample(replay_buffer, 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batch_size)
-    loss, replay_buffer = update_dqn(model, target_model, optimizer, episode_experiences, replay_buffer, gamma, losses)
-    losses.append(loss.item())
-    # Update the target model
+    
+    replay_buffer.append(episode_experiences)
+    if len(replay_buffer) >= batch_size:
+        batch = replay_buffer.sample_batch()
+        
+        loss, replay_buffer = update_dqn(model, target_model, optimizer, batch, replay_buffer, gamma, losses)
+        losses.append(loss.item())
+        # Update the target model
 
     epsilon = max(epsilon_end, epsilon * 0.995)
-    print(f"Episode {episode + 1} : Total Reward = {reward}")
+    print(f"Episode {episode + 1} : Reward = {reward}")
 
 print("---------------")
 print("Total reward -> ", total_reward)
