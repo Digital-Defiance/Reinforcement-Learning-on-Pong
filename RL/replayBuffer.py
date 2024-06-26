@@ -10,12 +10,17 @@ class ReplayBuffer():
         self.buffer_size = int(1e6)
         self.batch_size =  32
         self.buffer = deque(maxlen=self.buffer_size)
+        self.index = 0
 
     def __len__(self):
         return len(self.buffer)
 
-    def append(self, experience):
-        self.buffer.append(experience)
+    def add(self, experience):
+        if len(self.buffer) < self.buffer_size:
+            self.buffer.append(experience)
+        else:
+            self.buffer[self.index] = experience
+            self.index = (self.index + 1) % self.buffer_size
 
     def sample_batch(self):
         batch = random.sample(self.buffer, self.batch_size)
