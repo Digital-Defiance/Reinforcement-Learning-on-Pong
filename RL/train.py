@@ -11,44 +11,28 @@ from IPython import display
 import matplotlib.pyplot as plt
 import os
 from replayBuffer import ReplayBuffer
+import time
 
 # Helper functions
 # why this function -> for training DQN model using mini-batch of experince tuple from replay buffer
 
 def update_dqn(model, target_model, optimizer, batch, replay_buffer, gamma, losses):
     
-
-    for i in batch:
-        states, actions, rewards, next_states, done = zip(*i)    
-            
-
-    states = np.array(states, dtype=np.float32)
-    actions = np.array(actions, dtype=np.int64)
-    rewards = np.array(rewards, dtype=np.float32)
-    next_states = np.array(next_states, dtype=np.float32)
-    dones = np.array(done, dtype=np.float32)
-
-    states = torch.tensor(states, dtype=torch.float32)
-    actions = torch.tensor(actions, dtype=torch.int64)
-    rewards = torch.tensor(rewards, dtype=torch.float32)
-    next_states = torch.tensor(next_states, dtype=torch.float32)
-    dones = torch.tensor(done, dtype=torch.float32)
-    
+    states, actions, rewards, next_states, dones = batch
+    actions = actions.long()
    
     states = states.view(states.size(0), -1)
     next_states = next_states.view(next_states.size(0), -1)
 
-    q_values = model(states)
+    q_values = model(states).gather(1, actions.view(-1, 1)).squeeze(1)
     next_q_values = target_model(next_states).max(dim = 1)[0].detach()
 
 
     # now here is the formula
     target_q_values = rewards + gamma * next_q_values * (1 - dones)
 
-    # calculate loss -> smooth l1 loss is advance of l1_loss ( MAE )
-    # the loss of smooth_l1_loss approaches to 0
-    loss = F.smooth_l1_loss(q_values.gather(dim = 1, index = actions.unsqueeze(-1)), target_q_values.unsqueeze(-1))
-    print("current loss -> ", loss)
+    loss = F.mse_loss(q_values, target_q_values.detach())
+    # print("current loss -> ", loss)
     # what is unsqueeze = -1, it adds new dimension at last
 
     optimizer.zero_grad()
@@ -73,7 +57,7 @@ epsilon_start = 1.0 # this value will get reduce
 epsilon_end = 0.01 # till this our model will know path
 target_update_freq = 1000
 learning_rate = 0.001
-num_episodes = 100
+num_episodes = 10
 losses = []
 
 # Initializing environments now!
@@ -107,40 +91,35 @@ target_model.eval()
 
 
 # Training Loop
-
 epsilon = epsilon_start
 total_reward = 0
 for episode in range(num_episodes):
     env.reset()
     done = False
     state = env.get_striker_and_ball_coordinates()
-    episode_experiences = []
+
 
     while not done:
         action = epsilon_greedy_policy(state, epsilon, model, action_size)
         _, reward, done, _ = env.step(action)
         next_state = env.get_striker_and_ball_coordinates()
-        episode_experiences.append((state, action, reward, next_state, done))
+        replay_buffer.add(state, action, reward, next_state, done)
         state = next_state
         
-        if reward == 10 or reward == -10:
+        if len(replay_buffer) >= batch_size:
+            batch = replay_buffer.sample_batch()
+            loss, replay_buffer = update_dqn(model, target_model, optimizer, batch, replay_buffer, gamma, losses)
+            losses.append(loss.item())
+
+        if reward == 1 or reward == -1:
             done = True
 
         if episode % target_update_freq == 0:
             target_model.load_state_dict(model.state_dict())
 
-
         display.clear_output(wait = True)
         # env.render()
-
-    
-    replay_buffer.append(episode_experiences)
-    if len(replay_buffer) >= batch_size:
-        batch = replay_buffer.sample_batch()
         
-        loss, replay_buffer = update_dqn(model, target_model, optimizer, batch, replay_buffer, gamma, losses)
-        losses.append(loss.item())
-        # Update the target model
 
     epsilon = max(epsilon_end, epsilon * 0.995)
     print(f"Episode {episode + 1} : Reward = {reward}")
@@ -166,4 +145,6 @@ torch.save({
 
 print("Total number of episode on which model is trained on -> ", TOTAL_NUM_EPISODES)
 plt.plot(LOSSES)
+# plt.xticks(range(1, TOTAL_NUM_EPISODES), labels=None)
+plt.yscale("log")
 plt.show()
