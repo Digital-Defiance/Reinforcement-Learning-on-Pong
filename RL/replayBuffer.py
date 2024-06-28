@@ -24,10 +24,10 @@ class ReplayBuffer():
 
     def add(self, s, a, r, ns, d):
         self.states[self.index] = torch.tensor(s, dtype=torch.float32)
-        self.actions[self.index] = a
-        self.rewards[self.index] = r
+        self.actions[self.index] = torch.tensor(a, dtype=torch.int64)
+        self.rewards[self.index] = torch.tensor(r, dtype=torch.float32)
         self.next_states[self.index] = torch.tensor(ns, dtype=torch.float32)
-        self.dones[self.index] = d
+        self.dones[self.index] = torch.tensor(d, dtype=torch.float32)
 
         self.index = (self.index + 1) % self.buffer_size
         self.size = min(self.size + 1, self.buffer_size)
@@ -51,7 +51,7 @@ class ReplayBuffer():
             'next_states' : self.next_states[:self.size],
             'dones' : self.dones[:self.size],
             'size' : self.size,
-            'indes' : self.index
+            'index' : self.index
         }
 
         with open(filepath, 'wb') as f:

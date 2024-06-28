@@ -14,27 +14,17 @@ from replayBuffer import ReplayBuffer
 import time
 
 # Helper functions
-# why this function -> for training DQN model using mini-batch of experince tuple from replay buffer
-
 def update_dqn(model, target_model, optimizer, batch, replay_buffer, gamma, losses):
-    
     states, actions, rewards, next_states, dones = batch
     actions = actions.long()
-   
     states = states.view(states.size(0), -1)
     next_states = next_states.view(next_states.size(0), -1)
 
-    # how much discounted reward the agent can obtain by following its policy from any given state
     q_values = model(states).gather(1, actions.view(-1, 1)).squeeze(1)
-    next_q_values = target_model(next_states).max(dim = 1)[0].detach()
+    next_q_values = target_model(next_states).max(dim=1)[0].detach()
 
-
-    # now here is the formula
     target_q_values = rewards + gamma * next_q_values * (1 - dones)
-
     loss = F.mse_loss(q_values, target_q_values.detach())
-    # print("current loss -> ", loss)
-    # what is unsqueeze = -1, it adds new dimension at last
 
     optimizer.zero_grad()
     loss.backward()
@@ -45,52 +35,49 @@ def update_dqn(model, target_model, optimizer, batch, replay_buffer, gamma, loss
 def epsilon_greedy_policy(state, epsilon, model, action_size):
     if np.random.rand() < epsilon:
         return np.random.choice(action_size)
-
     else:
         with torch.no_grad():
             state = torch.tensor(state, dtype=torch.float32).view(1, -1)
             q_values = model(state)
             return q_values.argmax().item()
 
-# defining hyperparameters
-gamma = 0.99 # Discount factor
-epsilon_start = 1.0 # this value will get reduce 
-epsilon_end = 0.01 # till this our model will know path
+# Defining hyperparameters
+gamma = 0.99
+epsilon_start = 1.0
+epsilon_end = 0.01
 target_update_freq = 1000
 learning_rate = 0.001
-num_episodes = 1000
+num_episodes = 10
 losses = []
 avg_q_values = []
 
-# Initializing environments now!
+# Initializing environments
 env = PongEnvironment()
 replay_buffer = ReplayBuffer()
-state_size = 6 # striker_y, striker_x, ball_y, ball_X, velocity of ball (x and y) 
-action_size = 2 # left and right
-batch_size = 32 # batch size for replay_buffer
+state_size = 6
+action_size = 2
+batch_size = 32
 model = DQN(state_size)
 target_model = DQN(state_size)
-optimizer = optim.Adam(model.parameters(), lr = learning_rate)
+optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 if os.path.isfile("trained_model.pth"):
     checkpoint = torch.load("trained_model.pth")
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    losses.extend(checkpoint['losses'])
+    losses = checkpoint['losses']
+    avg_q_values = checkpoint['avg_q_values']
     total_num_episodes = checkpoint['total_num_episodes']
     if os.path.isfile('buffer.pkl'):
         replay_buffer.load_buffer()
     model.train()
-
 else:
-    print("TRAINING FOR FIRST TIME!")  
+    print("TRAINING FOR FIRST TIME!")
     total_num_episodes = 0
     model.train()
 
 target_model.load_state_dict(model.state_dict())
 target_model.eval()
-# why eval -> to stop dropout layers, batch normalization
-
 
 # Training Loop
 epsilon = epsilon_start
@@ -118,14 +105,13 @@ for episode in range(num_episodes):
         if reward == 1 or reward == -1:
             done = True
 
-        display.clear_output(wait = True)
+        display.clear_output(wait=True)
         # env.render()
         
-
     epsilon = max(epsilon_end, epsilon * 0.995)
     print(f"Episode {episode + 1} : Reward = {reward}")
     if episode % target_update_freq == 0:
-            target_model.load_state_dict(model.state_dict())
+        target_model.load_state_dict(model.state_dict())
 
     if episode_q_values:
         avg_q_values.append(np.mean(episode_q_values))
@@ -133,27 +119,26 @@ for episode in range(num_episodes):
 print("---------------")
 print("Total reward -> ", total_reward)
 
-
-
-# now saving model using checkpoints
+# Saving model and other metrics using checkpoints
 PATH = "trained_model.pth"
-LOSSES = []
-LOSSES.extend(losses)
 TOTAL_NUM_EPISODES = num_episodes + total_num_episodes
 
 replay_buffer.save_buffer()
 torch.save({
-    'model_state_dict' : model.state_dict(),
-    'optimizer_state_dict' : optimizer.state_dict(),
-    'losses' : LOSSES,   
-    'total_num_episodes' : TOTAL_NUM_EPISODES
+    'model_state_dict': model.state_dict(),
+    'optimizer_state_dict': optimizer.state_dict(),
+    'losses': losses,
+    'total_num_episodes': TOTAL_NUM_EPISODES,
+    'avg_q_values': avg_q_values
 }, PATH)
 
-print("Total number of episode on which model is trained on -> ", TOTAL_NUM_EPISODES)
-plt.plot(LOSSES)
-# plt.yscale("log")
-plt.show()
+print("Total number of episodes on which model is trained: ", TOTAL_NUM_EPISODES)
 
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.plot(losses)
 
+plt.subplot(1, 2, 2)
 plt.plot(avg_q_values)
+
 plt.show()
