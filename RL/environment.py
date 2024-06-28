@@ -113,7 +113,7 @@ class PongEnvironment(Env):
 
         text = 'state : {}, Rewards : {}'.format(self.ep_return, self.reward)
         self.canvas = cv2.putText(self.canvas, text, (10, 20), font, 0.8, (0, 0, 0), 1, cv2.LINE_AA)    
-
+    
     def reset(self):
         # episodic return
         self.ep_return = 0
@@ -165,43 +165,80 @@ class PongEnvironment(Env):
             1 : "Down"
         }
 
-    def step(self, action):
-        # represent current episode is done or not!
+    def step(self, action, skip_steps=4):
+        total_reward = 0
         done = False
+        info = {}
 
-        # assert!! need to study about this !
-        assert self.action_space.contains(action), "Invalid Action!"
+        for _ in range(skip_steps):
+            assert self.action_space.contains(action), "Invalid Action!"
 
-        # Reward for executing a step
-        # reward = 1
-        # nah, we will not reward for executing step, bcs it's state transition
+            # applying action for striker
+            if action == 0:
+                self.striker.move("Up")
+            elif action == 1:
+                self.striker.move("Down")
 
-        # applying action for striker
-        if action == 0:
-            self.striker.move("Up")
-        elif action == 1:
-            self.striker.move("Down")
+            self.ball.move()
 
-        
-        self.ball.move()
+            # checking if ball is collided with striker
+            if self.striker_collision(self.striker, self.ball):
+                self.ball.velocity_x = -self.ball.velocity_x
+                total_reward += 1
 
-        # checking if ball is collided with striker
-        if self.striker_collision(self.striker, self.ball):
-            self.ball.velocity_x = -self.ball.velocity_x
-            self.reward += 10
-            
+            # checking if ball is collided with left wall
+            if self.has_collided(self.ball):
+                done = True
+                total_reward -= 1
+                break  # End the episode if the ball collides with the left wall
 
-        # checking if ball is collided with left wall
-        if self.has_collided(self.ball):
-            done = True
-            self.reward = -10
+            self.ep_return += 1
+            self.draw_elements_on_canvas()
 
-        
-        self.ep_return += 1
-        self.draw_elements_on_canvas()
+            if done:
+                break
 
         # state = [self.striker.x, self.striker.y, self.ball.x, self.ball.y]
-        return [], self.reward, done, []
+        return [], total_reward, done, info
+
+    # def step(self, action):
+    #     # represent current episode is done or not!
+    #     done = False
+
+    #     # assert!! need to study about this !
+    #     assert self.action_space.contains(action), "Invalid Action!"
+
+    #     # Reward for executing a step
+    #     # reward = 1
+    #     # nah, we will not reward for executing step, bcs it's state transition
+
+    #     # applying action for striker
+    #     if action == 0:
+    #         self.striker.move("Up")
+    #     elif action == 1:
+    #         self.striker.move("Down")
+
+        
+    #     self.ball.move()
+
+    #     # checking if ball is collided with striker
+    #     if self.striker_collision(self.striker, self.ball):
+    #         self.ball.velocity_x = -self.ball.velocity_x
+    #         self.reward = 1
+            
+
+    #     # checking if ball is collided with left wall
+    #     if self.has_collided(self.ball):
+    #         done = True
+    #         self.reward = -1
+
+        
+    #     self.ep_return += 1
+    #     self.draw_elements_on_canvas()
+
+    #     # state = [self.striker.x, self.striker.y, self.ball.x, self.ball.y]
+    #     return [], self.reward, done, []
+
     
 
     def get_striker_and_ball_coordinates(self):
