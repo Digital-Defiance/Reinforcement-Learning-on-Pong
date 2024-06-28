@@ -24,6 +24,7 @@ def update_dqn(model, target_model, optimizer, batch, replay_buffer, gamma, loss
     states = states.view(states.size(0), -1)
     next_states = next_states.view(next_states.size(0), -1)
 
+    # how much discounted reward the agent can obtain by following its policy from any given state
     q_values = model(states).gather(1, actions.view(-1, 1)).squeeze(1)
     next_q_values = target_model(next_states).max(dim = 1)[0].detach()
 
@@ -39,7 +40,7 @@ def update_dqn(model, target_model, optimizer, batch, replay_buffer, gamma, loss
     loss.backward()
     optimizer.step()
     
-    return loss, replay_buffer
+    return loss, q_values.mean().item()
 
 def epsilon_greedy_policy(state, epsilon, model, action_size):
     if np.random.rand() < epsilon:
@@ -57,8 +58,9 @@ epsilon_start = 1.0 # this value will get reduce
 epsilon_end = 0.01 # till this our model will know path
 target_update_freq = 1000
 learning_rate = 0.001
-num_episodes = 10
+num_episodes = 1000
 losses = []
+avg_q_values = []
 
 # Initializing environments now!
 env = PongEnvironment()
@@ -93,11 +95,12 @@ target_model.eval()
 # Training Loop
 epsilon = epsilon_start
 total_reward = 0
+
 for episode in range(num_episodes):
     env.reset()
     done = False
     state = env.get_striker_and_ball_coordinates()
-
+    episode_q_values = []
 
     while not done:
         action = epsilon_greedy_policy(state, epsilon, model, action_size)
@@ -108,14 +111,12 @@ for episode in range(num_episodes):
         
         if len(replay_buffer) >= batch_size:
             batch = replay_buffer.sample_batch()
-            loss, replay_buffer = update_dqn(model, target_model, optimizer, batch, replay_buffer, gamma, losses)
+            loss, avg_q_value = update_dqn(model, target_model, optimizer, batch, replay_buffer, gamma, losses)
             losses.append(loss.item())
+            episode_q_values.append(avg_q_value)
 
         if reward == 1 or reward == -1:
             done = True
-
-        if episode % target_update_freq == 0:
-            target_model.load_state_dict(model.state_dict())
 
         display.clear_output(wait = True)
         # env.render()
@@ -123,6 +124,11 @@ for episode in range(num_episodes):
 
     epsilon = max(epsilon_end, epsilon * 0.995)
     print(f"Episode {episode + 1} : Reward = {reward}")
+    if episode % target_update_freq == 0:
+            target_model.load_state_dict(model.state_dict())
+
+    if episode_q_values:
+        avg_q_values.append(np.mean(episode_q_values))
 
 print("---------------")
 print("Total reward -> ", total_reward)
@@ -145,6 +151,9 @@ torch.save({
 
 print("Total number of episode on which model is trained on -> ", TOTAL_NUM_EPISODES)
 plt.plot(LOSSES)
-# plt.xticks(range(1, TOTAL_NUM_EPISODES), labels=None)
-plt.yscale("log")
+# plt.yscale("log")
+plt.show()
+
+
+plt.plot(avg_q_values)
 plt.show()
