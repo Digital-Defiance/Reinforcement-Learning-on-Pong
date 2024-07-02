@@ -1,0 +1,5 @@
+https://jonathan-hui.medium.com/rl-tips-on-reinforcement-learning-fbd121111775#:~:text=Batch%20size%2FBuffer%20size&text=The%20batch%20size%20is%20100K%20for%20TRPO%20on%20Atari%20games.&text=For%20DQN%20on%20Atari%2C%20the,noise%20will%20overwhelm%20the%20training.
+
+
+
+
