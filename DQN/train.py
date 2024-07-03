@@ -46,10 +46,11 @@ gamma = 0.99
 epsilon_start = 1.0
 epsilon_end = 0.01
 target_update_freq = 1000
-learning_rate = 1e-2
-num_episodes = 100
+learning_rate = 0.001
+num_episodes = 10
 losses = []
 avg_q_values = []
+episode_rewards_list = []
 
 # Initializing environments
 env = PongEnvironment()
@@ -68,6 +69,7 @@ if os.path.isfile("trained_model.pth"):
     losses = checkpoint['losses']
     avg_q_values = checkpoint['avg_q_values']
     total_num_episodes = checkpoint['total_num_episodes']
+    episode_rewards_list = checkpoint['episode_rewards']
     if os.path.isfile('buffer.pkl'):
         replay_buffer.load_buffer()
     model.train()
@@ -89,9 +91,11 @@ for episode in range(num_episodes):
     state = env.get_striker_and_ball_coordinates()
     episode_q_values = []
 
+    episode_reward = 0
     while not done:
         action = epsilon_greedy_policy(state, epsilon, model, action_size)
         _, reward, done, _ = env.step(action)
+        episode_reward += reward
         next_state = env.get_striker_and_ball_coordinates()
         replay_buffer.add(state, action, reward, next_state, done)
         state = next_state
@@ -107,6 +111,7 @@ for episode in range(num_episodes):
 
         display.clear_output(wait=True)
         # env.render()
+    episode_rewards_list.append(episode_reward)
         
     epsilon = max(epsilon_end, epsilon * 0.995)
     print(f"Episode {episode + 1} : Reward = {reward}")
@@ -129,16 +134,30 @@ torch.save({
     'optimizer_state_dict': optimizer.state_dict(),
     'losses': losses,
     'total_num_episodes': TOTAL_NUM_EPISODES,
-    'avg_q_values': avg_q_values
+    'avg_q_values': avg_q_values,
+    'episode_rewards': episode_rewards_list
 }, PATH)
 
 print("Total number of episodes on which model is trained: ", TOTAL_NUM_EPISODES)
 
-plt.figure(figsize=(12, 5))
-plt.subplot(1, 2, 1)
+plt.figure(figsize=(15, 5))
+plt.subplot(1, 3, 1)
 plt.plot(losses)
+plt.title('Losses')
+plt.xlabel('Steps')
+plt.ylabel('Loss')
 
-plt.subplot(1, 2, 2)
+plt.subplot(1, 3, 2)
 plt.plot(avg_q_values)
+plt.title('Average Q-values')
+plt.xlabel('Episodes')
+plt.ylabel('Avg Q-value')
 
+plt.subplot(1, 3, 3)
+plt.plot(episode_rewards_list)
+plt.title('Episode Rewards')
+plt.xlabel('Episodes')
+plt.ylabel('Reward')
+
+plt.tight_layout()
 plt.show()
