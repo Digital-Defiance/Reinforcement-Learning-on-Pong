@@ -2,7 +2,7 @@ import pygame
 from striker import Striker
 from ball import Ball
 import torch
-from RL.model import DQN
+from DQN.model import DQN
 
 WIDTH = 800
 HEIGHT = 400
@@ -31,7 +31,7 @@ def runGame():
     ball = Ball(400, 200, 10, 3, 3, (255, 255, 255), screen)
 
     model = DQN(in_features=6)
-    checkpoint = torch.load("RL/trained_model.pth")
+    checkpoint = torch.load("DQN/trained_model.pth", map_location=torch.device('cpu'))
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
     
