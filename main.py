@@ -49,10 +49,7 @@ def runGame():
         
         # handling user input for keys on both the players!
         keys = pygame.key.get_pressed()
-        # if keys[pygame.K_a]:
-        #     left_striker.move('up')
-        # if keys[pygame.K_d]:
-        #     left_striker.move('down')
+        
         if keys[pygame.K_LEFT]:
             right_striker.move('down')
         if keys[pygame.K_RIGHT]:
@@ -75,7 +72,6 @@ def runGame():
         with torch.no_grad():
             q_values = model(state)
             action = q_values.argmax().item()
-        
         if action == 0:
             left_striker.move('up')
         elif action == 1:
