@@ -27,7 +27,7 @@ class Striker:
         self.screen_height = 400
 
         # now creating icon for it
-        self.icon = cv2.imread("paddle.png") / 255.0
+        self.icon = cv2.imread("DQN/paddle.png") / 255.0
         # self.icon = cv2.imread("paddle.png") / 255
         self.icon = cv2.resize(self.icon, (self.width, self.height))
         
@@ -58,7 +58,7 @@ class Ball:
         self.screen_width = 800
         self.screen_height = 400
 
-        self.icon = cv2.imread("ball.png") / 255.0
+        self.icon = cv2.imread("DQN/ball.png") / 255.0
         self.icon = cv2.resize(self.icon, (self.width, self.height))
 
     def get_position(self):
@@ -183,8 +183,10 @@ class PongEnvironment(Env):
 
             # checking if ball is collided with striker
             if self.striker_collision(self.striker, self.ball):
+                done = True
                 self.ball.velocity_x = -self.ball.velocity_x
                 total_reward += 1
+            
 
             # checking if ball is collided with left wall
             if self.has_collided(self.ball):
@@ -201,45 +203,6 @@ class PongEnvironment(Env):
         # state = [self.striker.x, self.striker.y, self.ball.x, self.ball.y]
         return [], total_reward, done, info
 
-    # def step(self, action):
-    #     # represent current episode is done or not!
-    #     done = False
-
-    #     # assert!! need to study about this !
-    #     assert self.action_space.contains(action), "Invalid Action!"
-
-    #     # Reward for executing a step
-    #     # reward = 1
-    #     # nah, we will not reward for executing step, bcs it's state transition
-
-    #     # applying action for striker
-    #     if action == 0:
-    #         self.striker.move("Up")
-    #     elif action == 1:
-    #         self.striker.move("Down")
-
-        
-    #     self.ball.move()
-
-    #     # checking if ball is collided with striker
-    #     if self.striker_collision(self.striker, self.ball):
-    #         self.ball.velocity_x = -self.ball.velocity_x
-    #         self.reward = 1
-            
-
-    #     # checking if ball is collided with left wall
-    #     if self.has_collided(self.ball):
-    #         done = True
-    #         self.reward = -1
-
-        
-    #     self.ep_return += 1
-    #     self.draw_elements_on_canvas()
-
-    #     # state = [self.striker.x, self.striker.y, self.ball.x, self.ball.y]
-    #     return [], self.reward, done, []
-
-    
 
     def get_striker_and_ball_coordinates(self):
         return [self.striker.x, self.striker.y, self.ball.x, self.ball.y, self.ball.velocity_x, self.ball.velocity_y]

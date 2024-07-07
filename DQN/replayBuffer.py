@@ -6,17 +6,18 @@ import pickle
 
 
 class ReplayBuffer():
-    def __init__(self):
-        self.buffer_size = int(1e6)
-        self.batch_size = 32
+    def __init__(self, observation_size, buffer_size = 1e5, batch_size = 32):
+        self.buffer_size = int(buffer_size)
+        self.batch_size = batch_size
         self.index = 0
         self.size = 0
+        self.observation_size = observation_size
 
         self.states = torch.empty((self.buffer_size, 6))
-        self.actions = torch.empty((self.buffer_size, 1))
-        self.rewards = torch.empty((self.buffer_size, 1))
+        self.actions = torch.empty((self.buffer_size, ))
+        self.rewards = torch.empty((self.buffer_size, ))
         self.next_states = torch.empty((self.buffer_size, 6))
-        self.dones = torch.empty((self.buffer_size, 1))
+        self.dones = torch.empty((self.buffer_size, ))
         
 
     def __len__(self):
@@ -67,16 +68,16 @@ class ReplayBuffer():
         if self.size > self.buffer_size:
             self.buffer_size = self.size
             self.states = torch.empty((self.buffer_size, 6))
-            self.actions = torch.empty((self.buffer_size, 1))
-            self.rewards = torch.empty((self.buffer_size, 1))
+            self.actions = torch.empty((self.buffer_size, ))
+            self.rewards = torch.empty((self.buffer_size, ))
             self.next_states = torch.empty((self.buffer_size, 6))
-            self.dones = torch.empty((self.buffer_size, 1))
+            self.dones = torch.empty((self.buffer_size, ))
 
         self.states[:self.size] = buffer_data['states']
-        self.actions[:self.size] = buffer_data['actions']
-        self.rewards[:self.size] = buffer_data['rewards']
+        self.actions[:self.size] = buffer_data['actions'] if len(buffer_data["actions"].shape) == 1 else buffer_data['actions'].squeeze(-1)
+        self.rewards[:self.size] = buffer_data['rewards'] if len(buffer_data["rewards"].shape) == 1 else buffer_data['rewards'].squeeze(-1)
         self.next_states[:self.size] = buffer_data['next_states']
-        self.dones[:self.size] = buffer_data['dones']
+        self.dones[:self.size] = buffer_data['dones'] if len(buffer_data["dones"].shape) == 1 else buffer_data['dones'].squeeze(-1)
 
         
 
