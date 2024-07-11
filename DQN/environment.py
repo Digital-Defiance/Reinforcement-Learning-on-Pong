@@ -27,7 +27,7 @@ class Striker:
         self.screen_height = 400
 
         # now creating icon for it
-        self.icon = cv2.imread("DQN/paddle.png") / 255.0
+        self.icon = cv2.imread("paddle.png") / 255.0
         # self.icon = cv2.imread("paddle.png") / 255
         self.icon = cv2.resize(self.icon, (self.width, self.height))
         
@@ -58,7 +58,7 @@ class Ball:
         self.screen_width = 800
         self.screen_height = 400
 
-        self.icon = cv2.imread("DQN/ball.png") / 255.0
+        self.icon = cv2.imread("ball.png") / 255.0
         self.icon = cv2.resize(self.icon, (self.width, self.height))
 
     def get_position(self):
@@ -122,6 +122,13 @@ class PongEnvironment(Env):
         # Initialize striker, ball object
         self.striker = Striker()
         self.ball = Ball()
+
+        # ---------------------------------------------------------
+        # after training on enough episodes like 140k, 150k now it's time for advance level
+        # so spawning the ball from randomize location on only y axis!
+        self.ball.y = random.randint(0, self.height - self.ball.height)
+        print("CURRENT Y LOCATION OF BALL -> ", self.ball.y)
+        # ---------------------------------------------------------
 
         # adding to elements
         self.elements = [self.striker, self.ball]
