@@ -62,7 +62,7 @@ epsilon_start = 1.0
 epsilon_end = 0.01
 target_update_freq = 1000
 learning_rate = 0.001
-num_episodes = 2000
+num_episodes = 100
 losses = []
 avg_q_values = []
 episode_rewards_list = []
@@ -136,7 +136,7 @@ for episode in range(num_episodes):
 
         display.clear_output(wait=True)
         # env.render()
-        
+
     episode_rewards_list.append(episode_reward)
     last_10_episodes.append(episode_reward)
 
@@ -144,13 +144,14 @@ for episode in range(num_episodes):
     last_10 = np.mean(last_10_episodes) if len(last_10_episodes) else np.nan
 
     print(f"Episode {episode + 1} : Reward = {reward} Epsilon: {epsilon:0.2f} , Last 10 Episodes: {last_10:0.2f} , Updates: {n_updates}")
-    
+
 
     if episode_q_values:
         avg_q_values.append(np.mean(episode_q_values))
 
 print("---------------")
 print("Total reward -> ", total_reward)
+
 # Saving model and other metrics using checkpoints
 PATH = "trained_model.pth"
 TOTAL_NUM_EPISODES = num_episodes + total_num_episodes
