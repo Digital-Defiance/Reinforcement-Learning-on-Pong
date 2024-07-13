@@ -28,7 +28,7 @@ def runGame():
     # now making strikers and ball
     left_striker = Striker(10, 200, 15, 60, (0, 0, 255), screen)
     right_striker = Striker(775, 200, 15, 60, (255, 0, 0), screen)
-    ball = Ball(400, 200, 10, 3, 3, (255, 255, 255), screen)
+    ball = Ball(400, 200, 10, 4, 4, (255, 255, 255), screen)
 
     model = DQN(in_features=6)
     checkpoint = torch.load("DQN/trained_model.pth", map_location=torch.device('cpu'))
@@ -57,8 +57,8 @@ def runGame():
 
 
         ball.move()
-        ball.check_collision(left_striker)
-        ball.check_collision(right_striker)
+        ball.check_collision(left_striker=left_striker)
+        ball.check_collision(right_striker=right_striker)
 
         gameover = ball.collision_with_wall()
         if gameover == 'left':
