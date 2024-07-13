@@ -34,12 +34,24 @@ class Ball:
         if self.ball.left <= 0 or self.ball.right >= self.screen_width:
             self.velocity_x = -self.velocity_x
 
-    def check_collision(self, striker):
-        # so here striker is a object
+    def check_collision(self, left_striker = None, right_striker = None):
+        
+        if left_striker and self.ball.colliderect(left_striker.striker):
+            hit_pos = (self.ball.centery - left_striker.striker.top) / left_striker.striker.height
+            if hit_pos < 0.5:
+                self.velocity_y = -abs(self.velocity_y)
+            else:
+                self.velocity_y = abs(self.velocity_y)
+            self.velocity_x = abs(self.velocity_x)
 
-        if self.ball.colliderect(striker.striker):
-            # it's logical we have to only reverse x velocity
-            self.velocity_x = -self.velocity_x
+        elif right_striker and self.ball.colliderect(right_striker.striker):
+            hit_pos = (self.ball.centery - right_striker.striker.top) / right_striker.striker.height
+            if hit_pos < 0.5:
+                self.velocity_y = -abs(self.velocity_y)
+            else:
+                self.velocity_y = abs(self.velocity_y)
+            self.velocity_x = -abs(self.velocity_x)            
+
 
     def collision_with_wall(self):
         if self.ball.left <= 0:
