@@ -31,11 +31,14 @@ python main.py
 
 <p align="center">
   <img src="DQN/training_video.gif" alt="Video">
-</p>
--> Delete the trained_model.pth and buffer.pkl files first!  
+</p>  
+-> Delete the trained_model.pth and buffer.pkl files first! <br /> 
+
 ```
 cd DQN
-```  
+```
+<br />
+
 -> select num_of_episodes in train.py  
 ```
 python train.py
