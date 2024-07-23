@@ -4,11 +4,11 @@
 Implemented AI player in Pong game, with Custom Environment!
 
 ## How does it play?
--> After 140k episodes  
-[140k](DQN/140k/140k_demo.mp4)  
+-> After 140k episodes
+[140k](./DQN/140k/140k_demo.mp4)  
   
 -> After 220k episodes  
-[220k](DQN/220k/220k_demo.mp4)
+[220k](./DQN/220k/220k_demo.mp4)
 ## Installation
 
 ```
