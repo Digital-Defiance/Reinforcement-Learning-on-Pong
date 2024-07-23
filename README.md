@@ -13,6 +13,7 @@ Implemented AI player in Pong game, with Custom Environment!
 <p align="center">
   <img src="DQN/220k/220k_demo.gif" alt="Video">
 </p>
+
 ## Installation
 
 ```
