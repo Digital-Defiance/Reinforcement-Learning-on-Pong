@@ -28,6 +28,10 @@ python main.py
 
 
 ## Train from scratch?
+
+<p align="center">
+  <img src="DQN/training_video.gif" alt="Video">
+</p>
 -> Delete the trained_model.pth and buffer.pkl files first!
 ```
 cd DQN
