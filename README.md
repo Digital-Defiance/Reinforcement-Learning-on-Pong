@@ -11,7 +11,7 @@ Implemented AI player in Pong game, with Custom Environment!
   
 -> After 220k episodes  
 <p align="center">
-  <img src="DQN/140k/220k_demo.gif" alt="Video">
+  <img src="DQN/220k/220k_demo.gif" alt="Video">
 </p>
 ## Installation
 
