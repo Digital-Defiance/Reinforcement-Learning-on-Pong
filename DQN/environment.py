@@ -127,7 +127,7 @@ class PongEnvironment(Env):
         # after training on enough episodes like 140k, 150k now it's time for advance level
         # so spawning the ball from randomize location on only y axis!
         self.ball.y = random.randint(50, 350)
-        print("CURRENT Y LOCATION OF BALL -> ", self.ball.y)
+        #print("CURRENT Y LOCATION OF BALL -> ", self.ball.y)
         # ---------------------------------------------------------
 
         # adding to elements
