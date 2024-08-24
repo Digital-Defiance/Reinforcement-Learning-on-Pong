@@ -14,6 +14,16 @@ Implemented AI player in Pong game, with Custom Environment!
   <img src="DQN/220k/220k_demo.gif" alt="Video">
 </p>
 
+-> After 320k episodes  
+<p align="center">
+  <img src="DQN/320k/320k_demo.gif" alt="Video">
+</p>
+
+## Loss Graph
+<p align="center">
+  <img src="loss_plot.png" alt="image">
+</p>
+
 ## Installation
 
 ```
