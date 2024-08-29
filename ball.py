@@ -1,4 +1,5 @@
 import pygame
+import random
 
 class Ball:
     
@@ -36,22 +37,30 @@ class Ball:
 
     def check_collision(self, left_striker = None, right_striker = None):
         
+        # add more randomness when ball hits on only left striker
         if left_striker and self.ball.colliderect(left_striker.striker):
             hit_pos = (self.ball.centery - left_striker.striker.top) / left_striker.striker.height
+            
             if hit_pos < 0.5:
-                self.velocity_y = -abs(self.velocity_y)
+                self.velocity_y = -abs(self.velocity_y) + random.uniform(-1, 1) 
             else:
-                self.velocity_y = abs(self.velocity_y)
-            self.velocity_x = abs(self.velocity_x)
+                self.velocity_y = abs(self.velocity_y) + random.uniform(-1, 1)  
+            
+            
+            if self.ball.centerx < left_striker.striker.centerx:
+                self.velocity_x = abs(self.velocity_x) + random.uniform(-1, 1) 
+            else:
+                self.velocity_x = abs(self.velocity_x) + random.uniform(-1, 1)  
+
 
         elif right_striker and self.ball.colliderect(right_striker.striker):
             hit_pos = (self.ball.centery - right_striker.striker.top) / right_striker.striker.height
+            
             if hit_pos < 0.5:
                 self.velocity_y = -abs(self.velocity_y)
             else:
                 self.velocity_y = abs(self.velocity_y)
-            self.velocity_x = -abs(self.velocity_x)            
-
+            self.velocity_x = -abs(self.velocity_x)
 
     def collision_with_wall(self):
         if self.ball.left <= 0:
